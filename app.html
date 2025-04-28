@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Comparison Tool</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --primary-light: #60a5fa;
+            --primary-bg: #ecf5ff;
+            --secondary: #10b981;
+            --secondary-dark: #059669;
+            --danger: #ef4444;
+            --danger-light: #fecaca;
+            --warning: #f59e0b;
+            --dark: #1f2937;
+            --light: #f9fafb;
+            --gray: #6b7280;
+            --light-gray: #e5e7eb;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f0f4f8;
+            color: var(--dark);
+            min-height: 100vh;
+            background-image: linear-gradient(to bottom right, #f0f4f8, #e6eef8);
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 1.5rem 2rem;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        header::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+            z-index: 1;
+        }
+        
+        header h1 {
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            position: relative;
+            z-index: 2;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 2;
+        }
+        
+        main {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        
+        .language-controls {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .language-controls:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+        }
+        
+        .language-select {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .language-select label {
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .language-select select {
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--light-gray);
+            font-size: 1rem;
+            background-color: var(--light);
+            cursor: pointer;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%231f2937' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            padding-right: 2.5rem;
+        }
+        
+        .language-select select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+        
+        .template-buttons {
+            display: flex;
+            gap: 0.75rem;
+        }
+        
+        .code-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+        
+        .code-editor {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .code-editor:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        }
+        
+        .code-header {
+            background: linear-gradient(90deg, var(--dark), #2d3748);
+            color: white;
+            padding: 1rem 1.25rem;
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #161e2d;
+        }
+        
+        .code-header span {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+        }
+        
+        .code-header span i {
+            font-size: 1.1rem;
+        }
+        
+        .code-area {
+            height: 500px;
+            width: 100%;
+            padding: 1.25rem;
+            font-family: "Fira Code", "Consolas", monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            border: none;
+            resize: vertical;
+            color: var(--dark);
+            background-color: #fafbfc;
+            transition: background-color 0.2s;
+        }
+        
+        .code-area:focus {
+            outline: none;
+            background-color: #fff;
+            box-shadow: inset 0 0 0 2px var(--primary-light);
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+        
+        button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(to bottom, var(--primary), var(--primary-dark));
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(to bottom, var(--primary-dark), #1d4ed8);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(37, 99, 235, 0.25);
+        }
+        
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+        
+        .btn-secondary {
+            background-color: var(--light);
+            color: var(--dark);
+            border: 1px solid var(--light-gray);
+        }
+        
+        .btn-secondary:hover {
+            background-color: #f3f4f6;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .btn-secondary:active {
+            transform: translateY(0);
+        }
+        
+        .results {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s;
+            opacity: 0.85;
+        }
+        
+        .results.active {
+            opacity: 1;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        }
+        
+        .results h2 {
+            margin-bottom: 1.5rem;
+            font-size: 1.6rem;
+            color: var(--dark);
+            position: relative;
+            padding-bottom: 0.75rem;
+        }
+        
+        .results h2::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 60px;
+            height: 4px;
+            background: linear-gradient(to right, var(--primary), var(--primary-light));
+            border-radius: 2px;
+        }
+        
+        .diff-display {
+            font-family: "Fira Code", "Consolas", monospace;
+            white-space: pre-wrap;
+            padding: 1.25rem;
+            background-color: #fafbfc;
+            border-radius: 8px;
+            max-height: 450px;
+            overflow-y: auto;
+            border: 1px solid var(--light-gray);
+            margin-top: 1.5rem;
+            transition: all 0.3s;
+            line-height: 1.6;
+        }
+        
+        .missing-line {
+            background-color: var(--danger-light);
+            color: var(--danger);
+            padding: 0 4px;
+            border-radius: 2px;
+        }
+        
+        .unchanged-line {
+            color: var(--dark);
+        }
+        
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.25rem;
+            margin-top: 1.5rem;
+        }
+        
+        .stat {
+            text-align: center;
+            padding: 1.5rem;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+            transition: all 0.3s;
+            border: 1px solid var(--light-gray);
+        }
+
+        .stat:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+        }
+        
+        .stat h3 {
+            font-size: 1rem;
+            color: var(--gray);
+            margin-bottom: 0.75rem;
+        }
+        
+        .stat-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin: 0.5rem 0;
+            position: relative;
+            transition: all 0.5s;
+            display: inline-block;
+        }
+        
+        .match-good {
+            color: var(--secondary);
+        }
+        
+        .match-medium {
+            color: var(--warning);
+        }
+        
+        .match-poor {
+            color: var(--danger);
+        }
+        
+        #match-percentage {
+            transition: color 0.3s;
+        }
+
+        .stat:nth-child(1) .stat-value::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            bottom: -8px;
+            width: 100%;
+            height: 4px;
+            background: currentColor;
+            border-radius: 2px;
+            transform: scaleX(0.8);
+            opacity: 0.5;
+        }
+        
+        .stat:nth-child(2) {
+            border-top: 3px solid var(--danger);
+        }
+        
+        .stat:nth-child(3) {
+            border-top: 3px solid var(--warning);
+        }
+        
+        .stat:nth-child(4) {
+            border-top: 3px solid var(--primary);
+        }
+        
+        .stat:nth-child(2) .stat-value {
+            color: var(--danger);
+        }
+        
+        .stat:nth-child(3) .stat-value {
+            color: var(--warning);
+        }
+        
+        .stat:nth-child(4) .stat-value {
+            color: var(--primary);
+        }
+        
+        footer {
+            text-align: center;
+            padding: 2rem;
+            margin-top: 2rem;
+            color: var(--gray);
+            font-size: 0.875rem;
+            border-top: 1px solid var(--light-gray);
+        }
+        
+        @media (max-width: 992px) {
+            .language-controls {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+
+            .template-buttons {
+                width: 100%;
+                justify-content: flex-end;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .code-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .summary {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 576px) {
+            .summary {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .line-numbers {
+            counter-reset: line;
+            padding-left: 3.5rem;
+            position: relative;
+            font-family: monospace;
+            white-space: pre;
+            overflow-x: auto;
+        }
+
+        .line-numbers > div {
+            position: relative;
+            counter-increment: line;
+        }
+
+        .line-numbers > div:before {
+            content: counter(line);
+            position: absolute;
+            left: -3rem;
+            width: 2.5rem;
+            text-align: right;
+            color: var(--gray);
+            user-select: none;
+        }
+
+        .highlight-missing {
+            background-color: var(--danger-light);
+        }
+
+        .code-comparison {
+            font-family: monospace;
+            white-space: pre;
+            overflow-x: auto;
+        }
+        
+        .code-line {
+            display: block;
+            padding: 0 0.5rem;
+            transition: background-color 0.2s;
+        }
+        
+        .missing {
+            background-color: var(--danger-light);
+            color: #000;
+            font-weight: 500;
+            border-left: 3px solid var(--danger);
+        }
+        
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 120px;
+            background-color: var(--dark);
+            color: white;
+            text-align: center;
+            padding: 5px 0;
+            border-radius: 6px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -60px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.75rem;
+            font-weight: normal;
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        @keyframes countUp {
+            from {
+                transform: translateY(10px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .animate-stat {
+            animation: countUp 0.8s ease-out forwards;
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+        
+        .pulse {
+            animation: pulse 0.6s;
+        }
+        
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1><i class="fas fa-code-compare"></i> Code Comparison Tool</h1>
+        <p>Crack the Code, Fix the Fault</p>
+    </header>
+    
+    <main>
+        <div class="container">
+            <div class="language-controls">
+                <div class="language-select">
+                    <label for="language"><i class="fas fa-code"></i> Programming Language:</label>
+                    <select id="language" onchange="updateTemplateButtons()">
+                        <option value="cpp">C++</option>
+                        <option value="python">Python</option>
+                        <option value="java">Java</option>
+                        <option value="c">C</option>
+                    </select>
+                </div>
+                
+                <div class="template-buttons">
+                    <button class="btn-secondary" onclick="loadTemplate('reference')">
+                        <i class="fas fa-file-import"></i> Load Reference Example
+                    </button>
+                    <button class="btn-secondary" onclick="loadTemplate('participant')">
+                        <i class="fas fa-file-import"></i> Load Sample Bug
+                    </button>
+                </div>
+            </div>
+            
+            <div class="code-container">
+                <div class="code-editor">
+                    <div class="code-header">
+                        <span><i class="fas fa-check-circle"></i> Reference Solution (Correct Code)</span>
+                        <button class="btn-secondary tooltip" onclick="clearCode('reference-code')">
+                            <i class="fas fa-eraser"></i> Clear
+                            <span class="tooltiptext">Clear reference code</span>
+                        </button>
+                    </div>
+                    <textarea id="reference-code" class="code-area" placeholder="Paste or write the correct solution here..."></textarea>
+                </div>
+                
+                <div class="code-editor">
+                    <div class="code-header">
+                        <span><i class="fas fa-bug"></i> Participant's Solution</span>
+                        <button class="btn-secondary tooltip" onclick="clearCode('participant-code')">
+                            <i class="fas fa-eraser"></i> Clear
+                            <span class="tooltiptext">Clear participant's code</span>
+                        </button>
+                    </div>
+                    <textarea id="participant-code" class="code-area" placeholder="Paste or write the participant's solution here..."></textarea>
+                </div>
+            </div>
+            
+            <div class="buttons">
+                <button class="btn-primary" onclick="compareCode()">
+                    <i class="fas fa-play"></i> Compare Code
+                </button>
+                <button class="btn-secondary" onclick="clearAll()">
+                    <i class="fas fa-trash-alt"></i> Clear All
+                </button>
+            </div>
+            
+            <div class="results" id="results-section">
+                <h2><i class="fas fa-chart-pie"></i> Comparison Results</h2>
+                
+                <div class="summary">
+                    <div class="stat">
+                        <h3>Match Percentage</h3>
+                        <div id="match-percentage" class="stat-value">--%</div>
+                    </div>
+                    <div class="stat">
+                        <h3>Missing Lines</h3>
+                        <div id="missing-lines" class="stat-value">0</div>
+                    </div>
+                    <div class="stat">
+                        <h3>Extra Lines</h3>
+                        <div id="extra-lines" class="stat-value">0</div>
+                    </div>
+                    <div class="stat">
+                        <h3>Changed Lines</h3>
+                        <div id="changed-lines" class="stat-value">0</div>
+                    </div>
+                </div>
+                
+                <h3 style="margin-top: 2rem;"><i class="fas fa-highlighter"></i> Reference Solution with Missing/Changed Lines Highlighted:</h3>
+                <div id="diff-display" class="diff-display">No comparison performed yet.</div>
+            </div>
+        </div>
+    </main>
+    
+    <footer>
+        <p><i class="fas fa-code"></i> Code Comparison Tool | Centre for Professional Enhancement | TechGem Sphere Club</p>
+    </footer>
+    
+    <script>
+        const codeTemplates = {
+            cpp: {
+                reference: `#include <iostream>
+#include <vector>
+using namespace std;
+
+// Function to find pairs that sum up to target
+vector<int> findPairs(vector<int> arr, int target) {
+    vector<int> result;
+    for (int i = 0; i < arr.size(); i++) {
+        for (int j = 0; j < arr.size(); j++) {
+            if (i != j && arr[i] + arr[j] == target) {
+                result.push_back(i);
+                result.push_back(j);
+                return result;
+            }
+        }
+    }
+    return result;
+}
+
+int main() {
+    vector<int> numbers = {2, 7, 11, 15};
+    int targetSum = 9;
+    
+    vector<int> pairs = findPairs(numbers, targetSum);
+    
+    if (pairs.empty()) {
+        cout << "No pairs found!" << endl;
+        return 0;
+    }
+    
+    for (int i = 0; i < pairs.size(); i += 2) {
+        if (i+1 < pairs.size()) {
+            cout << "Pair found: (" << pairs[i] << ", " << pairs[i+1] << ")" << endl;
+        }
+    }
+    
+    return 0;
+}`,
+                participant: `#include <iostream>
+#include <vector>
+using namespace std;
+
+// This function has bugs to find
+vector<int> findPairs(vector<int> arr, int target) {
+    vector<int> result;
+    for (int i = 0; i <= arr.size(); i++) {  // BUG: i <= arr.size() should be i < arr.size()
+        for (int j = 0; j < arr.size(); j++) {  // BUG: should check j != i to avoid same element
+            if (arr[i] + arr[j] == target) {
+                result.push_back(i);
+                result.push_back(j);
+                return result;
+            }
+        }
+    }
+    return result;
+}
+
+int main() {
+    vector<int> numbers = {2, 7, 11, 15};
+    int targetSum = 9;
+    
+    vector<int> pairs = findPairs(numbers, targetSum);
+    
+    if (pairs.size() == 0) {  // Could be pairs.empty() instead
+        cout << "No pairs found!" << endl;
+        return 0;
+    }
+    
+    for (int i = 0; i < pairs.size(); i += 2) {
+        cout << "Pair found: (" << pairs[i] << ", " << pairs[i+1] << ")" << endl;
+        // Missing check if i+1 is valid index
+    }
+    
+    return 0;
+}`
+            },
+            python: {
+                reference: `def process_strings(text_list):
+    """
+    Process a list of strings and return modified versions.
+    """
+    result = []
+    if not text_list:
+        return result
+        
+    for text in text_list:
+        if not isinstance(text, str):
+            continue
+            
+        # Convert to lowercase and remove spaces
+        processed = text.lower().replace(" ", "")
+        
+        # Remove any digits
+        processed = ''.join(char for char in processed if not char.isdigit())
+        
+        # Add to results if not empty
+        if processed:
+            result.append(processed)
+            
+    return result
+
+# Test the function
+test_list = ["Hello World", "Python 3.9", "Code 404", None, "", 123]
+print(process_strings(test_list))`,
+                participant: `def process_strings(text_list):
+    """
+    Process a list of strings and return modified versions.
+    """
+    result = []
+    # Missing null check for text_list
+        
+    for text in text_list:
+        # Missing type check for text
+            
+        # Convert to lowercase and remove spaces
+        processed = text.lower().replace(" ", "")
+        
+        # Bug: Should remove digits but doesn't
+        
+        # Add to results if not empty
+        result.append(processed)  # Bug: adds empty strings
+            
+    return result
+
+# Test the function
+test_list = ["Hello World", "Python 3.9", "Code 404", None, "", 123]
+print(process_strings(test_list))`
+            },
+            java: {
+                reference: `public class RecursiveFibonacci {
+    public static void main(String[] args) {
+        int n = 10;
+        System.out.println("Fibonacci series up to " + n + " terms:");
+        
+        for (int i = 0; i < n; i++) {
+            System.out.print(fibonacci(i) + " ");
+        }
+    }
+    
+    /**
+     * Calculate the nth Fibonacci number recursively
+     */
+    public static int fibonacci(int n) {
+        // Base cases
+        if (n <= 0) {
+            return 0;
+        } else if (n == 1) {
+            return 1;
+        }
+        
+        // Recursive case
+        return fibonacci(n - 1) + fibonacci(n - 2);
+    }
+}`,
+                participant: `public class RecursiveFibonacci {
+    public static void main(String[] args) {
+        int n = 10;
+        System.out.println("Fibonacci series up to " + n + " terms:");
+        
+        for (int i = 0; i < n; i++) {
+            System.out.print(fibonacci(i) + " ");
+        }
+    }
+    
+    /**
+     * Calculate the nth Fibonacci number recursively
+     */
+    public static int fibonacci(int n) {
+        // Bug: Missing base case for n <= 0
+        if (n == 1) {
+            return 1;
+        }
+        
+        // Bug: Off-by-one error in recursive case
+        return fibonacci(n - 1) + fibonacci(n - 2);
+    }
+}`
+            },
+            c: {
+                reference: `#include <stdio.h>
+#include <stdlib.h>
+
+typedef struct Node {
+    int data;
+    struct Node* next;
+} Node;
+
+// Create a new node
+Node* createNode(int data) {
+    Node* newNode = (Node*)malloc(sizeof(Node));
+    if (newNode == NULL) {
+        printf("Memory allocation failed\\n");
+        exit(1);
+    }
+    newNode->data = data;
+    newNode->next = NULL;
+    return newNode;
+}
+
+// Insert at the beginning
+Node* insertAtBeginning(Node* head, int data) {
+    Node* newNode = createNode(data);
+    newNode->next = head;
+    return newNode;
+}
+
+// Print the linked list
+void printList(Node* head) {
+    Node* current = head;
+    while (current != NULL) {
+        printf("%d -> ", current->data);
+        current = current->next;
+    }
+    printf("NULL\\n");
+}
+
+// Free memory
+void freeList(Node* head) {
+    Node* current = head;
+    Node* next;
+    
+    while (current != NULL) {
+        next = current->next;
+        free(current);
+        current = next;
+    }
+}
+
+int main() {
+    Node* head = NULL;
+    
+    // Insert some values
+    head = insertAtBeginning(head, 10);
+    head = insertAtBeginning(head, 20);
+    head = insertAtBeginning(head, 30);
+    
+    printf("Linked List: ");
+    printList(head);
+    
+    // Clean up
+    freeList(head);
+    
+    return 0;
+}`,
+                participant: `#include <stdio.h>
+#include <stdlib.h>
+
+typedef struct Node {
+    int data;
+    struct Node* next;
+} Node;
+
+// Create a new node
+Node* createNode(int data) {
+    Node* newNode = (Node*)malloc(sizeof(Node));
+    // Bug: Missing null check after malloc
+    newNode->data = data;
+    newNode->next = NULL;
+    return newNode;
+}
+
+// Insert at the beginning
+Node* insertAtBeginning(Node* head, int data) {
+    Node* newNode = createNode(data);
+    newNode->next = head;
+    return newNode;
+}
+
+// Print the linked list
+void printList(Node* head) {
+    Node* current = head;
+    while (current != NULL) {
+        printf("%d -> ", current->data);
+        current = current->next;
+    }
+    printf("NULL\\n");
+}
+
+// Bug: Missing function to free memory
+
+int main() {
+    Node* head = NULL;
+    
+    // Insert some values
+    head = insertAtBeginning(head, 10);
+    head = insertAtBeginning(head, 20);
+    head = insertAtBeginning(head, 30);
+    
+    printf("Linked List: ");
+    printList(head);
+    
+    // Bug: Memory leak - not freeing the list
+    
+    return 0;
+}`
+            }
+        };
+
+        function clearCode(id) {
+            document.getElementById(id).value = '';
+        }
+
+        
+
+        function clearAll() {
+            clearCode('reference-code');
+            clearCode('participant-code');
+            document.getElementById('diff-display').innerHTML = 'No comparison performed yet.';
+            document.getElementById('match-percentage').textContent = '--%';
+            document.getElementById('missing-lines').textContent = '0';
+            document.getElementById('extra-lines').textContent = '0';
+            document.getElementById('changed-lines').textContent = '0';
+        }
+
+        function compareCode() {
+            const referenceCode = document.getElementById('reference-code').value.trim();
+            const participantCode = document.getElementById('participant-code').value.trim();
+            
+            if (!referenceCode || !participantCode) {
+                alert('Please enter both the reference and participant code.');
+                return;
+            }
+            
+            const referenceLines = referenceCode.split('\n');
+            const participantLines = participantCode.split('\n');
+            
+            const refProcessed = referenceLines.map(line => line.trim());
+            const partProcessed = participantLines.map(line => line.trim());
+            
+            let missingLines = 0;
+            let extraLines = 0;
+            let changedLines = 0;
+            let matchedLines = 0;
+            
+            let diffHtml = '<div class="code-comparison">';
+            
+            for (let i = 0; i < referenceLines.length; i++) {
+                const refLine = referenceLines[i];
+                const refTrimmed = refProcessed[i];
+                
+                const isPresent = partProcessed.includes(refTrimmed);
+                
+                if (!isPresent) {
+                    diffHtml += `<span class="code-line missing">${escapeHtml(refLine)}</span>`;
+                    missingLines++;
+                } else {
+                    diffHtml += `<span class="code-line">${escapeHtml(refLine)}</span>`;
+                    matchedLines++;
+                }
+            }
+            
+            diffHtml += '</div>';
+            
+            for (let i = 0; i < partProcessed.length; i++) {
+                if (!refProcessed.includes(partProcessed[i])) {
+                    extraLines++;
+                }
+            }
+            
+            for (let i = 0; i < partProcessed.length; i++) {
+                const partLine = partProcessed[i];
+                if (refProcessed.includes(partLine)) continue; 
+                
+                for (let j = 0; j < refProcessed.length; j++) {
+                    const refLine = refProcessed[j];
+                    if (isSimilar(refLine, partLine)) {
+                        changedLines++;
+                        break;
+                    }
+                }
+            }
+            
+            const totalDifferences = missingLines + extraLines + changedLines;
+            const totalLines = Math.max(referenceLines.length, participantLines.length);
+            const matchPercentage = totalLines > 0 ? Math.round(((totalLines - totalDifferences) / totalLines) * 100) : 0;
+            
+            document.getElementById('diff-display').innerHTML = diffHtml;
+            document.getElementById('match-percentage').textContent = `${matchPercentage}%`;
+            document.getElementById('missing-lines').textContent = missingLines;
+            document.getElementById('extra-lines').textContent = extraLines;
+            document.getElementById('changed-lines').textContent = changedLines;
+        }
+
+        function loadTemplate(type) {
+            if (type === 'reference') {
+                document.getElementById('reference-code').value = `// Reference Example\nfunction add(a, b) {\n    return a + b;\n}`;
+            } else if (type === 'participant') {
+                document.getElementById('sample-code').value = `// Sample Bug Example\nfunction addNumbers(x, y) {\n    return x + y;\n}`;
+            }
+        }
+        
+        function isSimilar(line1, line2) {
+            if (line1 === line2) return true;
+            
+            const stripped1 = line1.replace(/\s+/g, '');
+            const stripped2 = line2.replace(/\s+/g, '');
+            
+            if (stripped1 === stripped2) return true;
+            
+            if (stripped1.length >= stripped2.length) {
+                if (stripped1.includes(stripped2) && stripped2.length / stripped1.length >= 0.7) return true;
+            } else {
+                if (stripped2.includes(stripped1) && stripped1.length / stripped2.length >= 0.7) return true;
+            }
+            
+            return false;
+        }
+        
+        function escapeHtml(text) {
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
